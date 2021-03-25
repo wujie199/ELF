@@ -16,6 +16,7 @@
 #include "player.h"
 #include <random>
 
+// test
 class GameEnv {
 private:
     // Game definitions.
@@ -141,6 +142,8 @@ public:
 
     // Check if one player's base has been destroyed.
     PlayerId CheckBase(UnitType base_type) const;
+
+    PlayerId CheckWinner(UnitType base_type,const GameEnv& env) const;
 
     // Getter and setter for winner_id, termination.
     void SetWinnerId(PlayerId winner_id) { _winner_id = winner_id; }

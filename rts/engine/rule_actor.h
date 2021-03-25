@@ -13,16 +13,21 @@
 #include "cmd_specific.gen.h"
 #include "cmd_interface.h"
 #include "game_env.h"
+#include "game_action.h"
 
 custom_enum(AIState, STATE_START = 0, STATE_BUILD_WORKER, STATE_BUILD_BARRACK,
-  STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_ATTACK,
-  STATE_ATTACK_IN_RANGE, STATE_HIT_AND_RUN, STATE_DEFEND, NUM_AISTATE);
+   STATE_BUILD_MELEE_TROOP, STATE_BUILD_RANGE_TROOP, STATE_ATTACK,
+   STATE_ATTACK_IN_RANGE, STATE_HIT_AND_RUN, STATE_DEFEND,STATE_10, STATE_11,NUM_AISTATE);
+
+// custom_enum(AIState, STATE_START = 0, STATE_1, STATE_2,
+//   STATE_3, STATE_4, STATE_5,STATE_6, STATE_7, STATE_8, STATE_9,STATE_10, STATE_11,STATE_12, STATE_13,
+//   STATE_14, STATE_15,STATE_16,NUM_AISTATE);  
 
 custom_enum(FlagState, FLAGSTATE_START = 0, FLAGSTATE_GET_FLAG, FLAGSTATE_ATTACK_FLAG,
     FLAGSTATE_ESCORT_FLAG, FLAGSTATE_PROTECT_FLAG, //FLAGSTATE_ATTACK, FLAGSTATE_MOVE,
     NUM_FLAGSTATE);
 
-// Some easy macros
+// 调用对应的方法
 #define _A(...) CmdBPtr(new CmdAttack(INVALID, __VA_ARGS__))
 #define _M(...) CmdBPtr(new CmdMove(INVALID, __VA_ARGS__))
 #define _G(...) CmdBPtr(new CmdGather(INVALID, __VA_ARGS__))
@@ -67,7 +72,7 @@ private:
     vector<int> _prices;
     int _resource;
     UnitId _base_id, _resource_id, _opponent_base_id;
-    PointF _base_loc, _resource_loc;
+    PointF _base_loc, _resource_loc,_enemy_base_loc;
 
     const Unit *_base = nullptr;
     PlayerId _player_id = INVALID;
@@ -110,19 +115,29 @@ public:
     bool Affordable(UnitType ut) const { return _resource >= _prices[ut]; }
     void Build(UnitType ut) { _resource -= _prices[ut]; }
 
+
     CmdBPtr GetGatherCmd() const { return _G(_base_id, _resource_id); }
     CmdBPtr GetAttackEnemyBaseCmd() const { return _A(_opponent_base_id); }
     CmdBPtr GetBuildBarracksCmd(const GameEnv &env) const {
         PointF p;
-        if (env.FindEmptyPlaceNearby(_base_loc, 3, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
+        if (env.FindEmptyPlaceNearby(_base_loc, 3.0, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
         else return CmdBPtr();
     }
+        CmdBPtr GetBuildBarracksCmd1(const GameEnv &env,const PointF now) const {
+        PointF p;
+        if (env.FindEmptyPlaceNearby(now, 1, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
+        else return CmdBPtr();
+    }
+    CmdBPtr GetMOVECmd() const {return _M(_enemy_base_loc);}
+    CmdBPtr GetReturn() const { return _M(_base_loc);}
 
     const PointF &ResourceLoc() const { return _resource_loc; }
     const PointF &BaseLoc() const { return _base_loc; }
     const Unit *Base() const { return _base; }
     int Price(UnitType ut) const { return _prices[ut]; }
     int Resource() const { return _resource; }
+
+    PointF GetEnemyBaseLoc(){return _enemy_base_loc;}
 
     const Unit *EnemyAtResource();
     const Unit *EnemyAtBase();
@@ -146,6 +161,8 @@ protected:
     bool store_cmd_if_different(const Unit *, CmdBPtr &&cmd, AssignedCmds *m) const;
     void batch_store_cmds(const vector<const Unit *> &subset, const CmdBPtr& cmd, bool preemptive, AssignedCmds *m) const;
 
+    void batch_store_cmds2(const vector<const Unit *> &subset, const CmdBPtr& cmd, bool preemptive, AssignedCmds *m,int x) const;
+
     bool act_per_unit(const GameEnv &env, const Unit *u, const int *state, RegionHist *region_hist, string *state_string, AssignedCmds *assigned_cmds);
 
 public:
@@ -161,6 +178,7 @@ public:
     // Gather information needed for action.
     bool GatherInfo(const GameEnv &env, string *state_string, AssignedCmds *assigned_cmds);
 
+    // 人机对战制定命令
     bool ActByCmd(const GameEnv &env, const vector<CmdInput>& cmd_inputs, string * /*state_string*/, AssignedCmds *assigned_cmds) {
         for (const CmdInput &cmd : cmd_inputs) {
             // std::cout << cmd.info() << std::endl;

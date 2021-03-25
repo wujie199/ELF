@@ -55,19 +55,15 @@ class Evaluator:
         self.actor_count = 0
 
     def actor(self, batch):
-        ''' Actor.
-        Get the model, forward the batch and get a distribution. Sample from it and act.
-        Reply the message to game engine.
-
-        Args:
+        '''
+        参数:
             batch(dict): batch data
-
-        Returns:
+        返回值:
             reply_msg(dict): ``pi``: policy, ``a``: action, ``V``: value, `rv`: reply version, signatured by step
         '''
         if self.verbose: print("In Evaluator[%s]::actor" % self.name)
-
-        # actor model.
+        
+        # actor 模型.
         m = self.mi[self.actor_name]
         m.set_volatile(True)
         state_curr = m.forward(batch.hist(0))
@@ -164,7 +160,7 @@ class Trainer:
 
         self.counter.inc("train")
         self.timer.Record("batch_train")
-
+        
         mi.zero_grad()
         self.rl_method.update(mi, batch, self.counter.stats)
         mi.update_weights()

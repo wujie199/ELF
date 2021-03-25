@@ -21,11 +21,10 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
     if (_type == CMD_INPUT) {
         rule_actor.ActByCmd(env, _unit_cmds, &comment, &_cmds);
     } else {
-        bool gather_ok = rule_actor.GatherInfo(env, &comment, &_cmds);
+        bool gather_ok = rule_actor.GatherInfo(env, &comment, &_cmds);  // false
         if (! gather_ok) {
             return RTSAction::Send(env, receiver);
         }
-
         switch(_type) {
             case STATE9:
                 if (_action < 0 || _action >= (int) state.size()) {
@@ -33,9 +32,11 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
                          << _action << " / " << state.size() << endl;
                 }
                 state[_action] = 1;
+                rule_actor.ActByState3(env, state, &comment, &_cmds);
                 break;
             case SIMPLE:
                 rule_actor.GetActSimpleState(&state);
+                rule_actor.ActByState(env, state, &comment, &_cmds);
                 break;
             case HIT_AND_RUN:
                 rule_actor.GetActHitAndRunState(&state);
@@ -43,7 +44,7 @@ bool RTSMCAction::Send(const GameEnv &env, CmdReceiver &receiver) {
             default:
                 throw std::range_error("Invalid type: " + std::to_string(_type));
         }
-        rule_actor.ActByState(env, state, &comment, &_cmds);
+        // rule_actor.ActByState(env, state, &comment, &_cmds);
     }
     AddComment(comment);
 

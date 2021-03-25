@@ -25,7 +25,7 @@ if __name__ == '__main__':
     env["mi"].add_model("actor", model, copy=True, cuda=all_args.gpu is not None, gpu_id=all_args.gpu)
 
     trainer.setup(sampler=env["sampler"], mi=env["mi"], rl_method=env["method"])
-
+    
     GC.reg_callback("train", trainer.train)
     GC.reg_callback("actor", trainer.actor)
     runner.setup(GC, episode_summary=trainer.episode_summary,

@@ -132,6 +132,7 @@ UnitId GameEnv::FindClosestBase(PlayerId player_id) const {
     return INVALID;
 }
 
+// 获胜条件判断
 PlayerId GameEnv::CheckBase(UnitType base_type) const{
     PlayerId last_player_has_base = INVALID;
     for (auto it = _units.begin(); it != _units.end(); ++it) {
@@ -148,6 +149,40 @@ PlayerId GameEnv::CheckBase(UnitType base_type) const{
     }
     return last_player_has_base;
 }
+
+// RTS 游戏结束条件（新）
+PlayerId GameEnv::CheckWinner(UnitType base_type,const GameEnv& env) const {
+     PlayerId player_id  = 0;
+     PlayerId enemy_id = 1;
+     PlayerId base_player_id = INVALID;
+     bool hasEnemyUnit = false;
+     if(_units.size()== 0){
+        return INVALID;
+     }
+     // std::cout<<"_units.size() : "<<_units.size()<<std::endl;
+     for (auto it = _units.begin(); it != _units.end(); ++it){
+          const Unit *u = it->second.get();
+           if (u->GetUnitType() == base_type && u->GetPlayerId() == player_id){      // 玩家基地爆炸后要使循环不能进该函数
+               base_player_id = u->GetPlayerId();
+           }
+           if(!hasEnemyUnit){  
+                const Player& enemy = env.GetPlayer(enemy_id);
+                int resource = enemy.GetResource();
+               if( (resource > 2) || (u->GetUnitType() == MELEE_ATTACKER)){
+                    hasEnemyUnit = true;
+               }
+           } 
+        }
+     // 玩家基地被毁，游戏结束
+    if(base_player_id == INVALID){  
+        return enemy_id;  
+    }
+    if( !hasEnemyUnit ){  // hasEnemyUnit = false 
+        return player_id;   
+    }
+     return INVALID;    // 游戏还未结束
+ }
+
 
 bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.

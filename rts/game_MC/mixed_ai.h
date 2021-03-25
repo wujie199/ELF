@@ -52,8 +52,10 @@ public:
 
     bool Act(const State &s, RTSMCAction *a, const std::atomic_bool *done) override {
         if (_backup_ai != nullptr && s.GetTick() < _backup_ai_tick_thres) {
+            // std::cout << "1111111111----------------" << std::endl;
             return _backup_ai->Act(s, a, done);
         } else {
+            // std::cout << "22222222222----------------" << std::endl;
             return _main_ai->Act(s, a, done);
         }
     }

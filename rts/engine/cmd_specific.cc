@@ -260,6 +260,7 @@ bool CmdChangePlayerResource::run(GameEnv *env, CmdReceiver *receiver) {
     return true;
 }
 
+// 移除死亡单位
 bool CmdOnDeadUnit::run(GameEnv *env, CmdReceiver *receiver) {
     env->GetGameDef().CmdOnDeadUnitImpl(env, receiver, _id, _target);
     return true;

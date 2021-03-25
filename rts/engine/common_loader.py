@@ -118,7 +118,7 @@ class CommonLoader:
 
         params = GC.GetParams()
         print("Version: ", GC.Version())
-        print("Num Actions: ", params["num_action"])
+        print("Num Units: ", params["num_action"])
         print("Num unittype: ", params["num_unit_type"])
         print("num planes: ", params["num_planes"])
         params["rts_engine_version"] = GC.Version()

@@ -124,13 +124,13 @@ public:
 
         int num_unit_type = GameDef::GetNumUnitType();
         total_dim_ = 0;
-        total_dim_ += _add_extractor("UnitType", new ExtractorSpan(total_dim_, num_unit_type));
-        total_dim_ += _add_extractor("Feature", new ExtractorSpan(total_dim_, NUM_FEATURE));
+        total_dim_ += _add_extractor("UnitType", new ExtractorSpan(total_dim_, num_unit_type));     // 6
+        total_dim_ += _add_extractor("Feature", new ExtractorSpan(total_dim_, NUM_FEATURE));    // 4
 
         std::initializer_list<int> ticks = { 200, 500, 1000, 2000, 5000, 10000 };
 
         if (opt.use_time_decay) {
-            total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));
+            total_dim_ += _add_extractor("HistBin", new ExtractorSeq(total_dim_, ticks));   // 7 
         }
 
         if (opt.save_prev_seen_units) {
@@ -138,7 +138,7 @@ public:
             total_dim_ += _add_extractor("HistBinPrevSeen", new ExtractorSeq(total_dim_, ticks));
         }
 
-        total_dim_ += _add_extractor("Resource", new ExtractorSpan(total_dim_, NUM_RES_SLOT, 50));
+        total_dim_ += _add_extractor("Resource", new ExtractorSpan(total_dim_, NUM_RES_SLOT, 50));  // 5
     }
 
     int size() const { return total_dim_; }

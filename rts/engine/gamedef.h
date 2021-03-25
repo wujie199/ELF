@@ -36,10 +36,13 @@ struct UnitProperty {
     // Used for capturing the flag game.
     int _has_flag = 0;
 
+
+
     inline bool IsDead() const { return _hp <= 0; }
     inline Cooldown &CD(CDType t) { return _cds[t]; }
     inline const Cooldown &CD(CDType t) const { return _cds[t]; }
     inline UnitId GetLastDamageFrom() const { return _damage_from; }
+
 
     string Draw(Tick tick) const {
         string s = make_string(_hp, _max_hp);

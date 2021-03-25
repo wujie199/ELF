@@ -35,10 +35,8 @@ class ActorCritic:
         )
 
     def update(self, mi, batch, stats):
-        ''' Actor critic model update.
-        Feed stats for later summarization.
-
-        Args:
+        ''' 
+        需要的参数:
             mi(`ModelInterface`): mode interface used
             batch(dict): batch of data. Keys in a batch:
                 ``s``: state,
@@ -53,24 +51,29 @@ class ActorCritic:
         T = batch["s"].size(0)
 
         state_curr = m(batch.hist(T - 1))
+        # 设置初始的 Reward
         self.discounted_reward.setR(state_curr[value_node].squeeze().data, stats)
 
         err = None
-
+        
         for t in range(T - 2, -1, -1):
             bht = batch.hist(t)
+            # 先执行一次，获得当前状态下的 权重矩阵 和行为
             state_curr = m.forward(bht)
 
-            # go through the sample and get the rewards.
             V = state_curr[value_node].squeeze()
 
+            # 计算 reward
             R = self.discounted_reward.feed(
                 dict(r=batch["r"][t], terminal=batch["terminal"][t]),
                 stats=stats)
 
+            # 计算权重矩阵的误差
             policy_err = self.pg.feed(R-V.data, state_curr, bht, stats, old_pi_s=bht)
             err = add_err(err, policy_err)
+            # 计算价值 V 的误差
             err = add_err(err, self.value_matcher.feed({ value_node: V, "target" : R}, stats))
 
         stats["cost"].feed(err.data[0] / (T - 1))
+        # 反向传播
         err.backward()

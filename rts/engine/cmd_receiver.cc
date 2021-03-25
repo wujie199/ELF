@@ -40,6 +40,7 @@ bool CmdReceiver::FinishDurativeCmdIfDone(UnitId id) {
 }
 
 bool CmdReceiver::SendCmd(CmdBPtr &&cmd) {
+    // 发送命令
     return SendCmdWithTick(std::move(cmd), _tick);
 }
 
@@ -58,12 +59,13 @@ bool CmdReceiver::SendCmdWithTick(CmdBPtr &&cmd, Tick tick) {
     // For all commands that issued in ExecuteCmd(), we don't need to send them to _cmd_history.
     if (IsSaveToHistory()) _cmd_history.push_back(cmd->clone());
 
-    // Put the command to different queue
+    // 将不同的命令放到两个队列中
     CmdDurative *durative = dynamic_cast<CmdDurative *>(cmd.get());
     if (durative != nullptr) {
         // show_prompt_cond("Receive Durative Cmd", cmd);
         // cout << "Receive Durative Cmd " << cmd->PrintInfo() << endl;
         cmd.release();
+        // 命令被持续执行的队列
         _durative_cmd_queue.push(CmdDPtr(durative));
     } else {
         CmdImmediate *immediate = dynamic_cast<CmdImmediate *>(cmd.get());
@@ -71,6 +73,7 @@ bool CmdReceiver::SendCmdWithTick(CmdBPtr &&cmd, Tick tick) {
             // show_prompt_cond("Receive Immediate Cmd", cmd);
             // cout << "Receive Immediate Cmd " << cmd->PrintInfo() << endl;
             cmd.release();
+            // 命令被立即执行的队列
             _immediate_cmd_queue.push(CmdIPtr(immediate));
         } else {
             throw std::range_error("Error! the command is neither durative or immediate! " + cmd->PrintInfo());

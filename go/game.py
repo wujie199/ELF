@@ -59,7 +59,7 @@ class Loader:
         print("Version: ", GC.Version())
 
         params = GC.GetParams()
-        print("Num Actions: ", params["num_action"])
+        print("Num Units: ", params["num_action"])
 
         desc = {}
         if args.mode == "online":

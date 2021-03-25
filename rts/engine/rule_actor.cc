@@ -8,6 +8,8 @@
 
 #include "rule_actor.h"
 #include "gamedef.h"
+#include "game_action.h"
+
 
 static const float HitAndRunDist1 = 4.0;
 static const float HitAndRunDist2 = 6.0;
@@ -103,6 +105,9 @@ void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &r
         // cout << "_result = NO_BASE" << endl;
         return;
     }
+    //敌方目标位置
+    _enemy_base_loc = _enemy_troops[BASE][0]->GetPointF(); 
+
 
     // cout << "Base not empty" << endl << flush;
     _base = _my_troops[BASE][0];
@@ -117,9 +122,6 @@ void Preload::GatherInfo(const GameEnv& env, int player_id, const CmdReceiver &r
     _enemy_at_resource = nullptr;
     _enemy_at_base = nullptr;
 
-    // cout << "Check whether resource is empty .." << endl << flush;
-
-    // If there is no resource, just attack opponent's base.
     // Everyone, including workers.
     if (_my_troops[RESOURCE].empty()) {
         _result = NO_RESOURCE;
@@ -176,6 +178,23 @@ void RuleActor::batch_store_cmds(const vector<const Unit *> &subset,
         if (curr_cmd == nullptr || (preemptive && curr_cmd->type() != cmd->type()) ) {
             store_cmd(u, cmd->clone(), m);
         }
+    }
+}
+
+void RuleActor::batch_store_cmds2(const vector<const Unit *> &subset,
+        const CmdBPtr& cmd, bool preemptive, AssignedCmds *m,int x) const {
+            int i = 0;
+    for (const Unit *u : subset) {
+        if(i == x){
+            // std::cout << "x-----------: " << x << "i--------------: " << i << std::endl;
+            const CmdDurative *curr_cmd = GetCurrCmd(*_receiver, *u);
+            if (curr_cmd == nullptr || (preemptive && curr_cmd->type() != cmd->type()) ) {
+                // std::cout << "-------------" << std::endl;
+                store_cmd(u, cmd->clone(), m);
+            }
+            break;
+        }
+        i++;
     }
 }
 
@@ -238,7 +257,7 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     if (ut == WORKER) {
         // Gather!
         if (idle) store_cmd(u, _preload.GetGatherCmd(), assigned_cmds);
-
+        
         // If resource permit, build barracks.
         if (cmdtype == GATHER && state[STATE_BUILD_BARRACK] && ! region_hist->has_built_barracks) {
             if (_preload.Affordable(BARRACKS)) {
@@ -276,11 +295,9 @@ bool RuleActor::act_per_unit(const GameEnv &env, const Unit *u, const int *state
     }
 
     if (state[STATE_HIT_AND_RUN]) {
-        // cout << "Enter hit and run procedure" << endl << flush;
         auto enemy_troops = _preload.EnemyTroops();
         *state_string = "Hit and run";
         if (ut == RANGE_ATTACKER) {
-            // cout << "Enemy only have worker" << endl << flush;
             if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
                 hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
             }

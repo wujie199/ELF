@@ -27,17 +27,20 @@ protected:
   Tick _built_since;
   UnitProperty _property;
 
+
 public:
   Unit() : Unit(INVALID, INVALID, WORKER, PointF(), UnitProperty()) {
   }
 
   Unit(Tick tick, UnitId id, UnitType t, const PointF &p, const UnitProperty& property)
-      : _id(id), _type(t), _p(p), _last_p(p), _built_since(tick), _property(property) {
+      : _id(id), _type(t), _p(p), _last_p(p), _built_since(tick), _property(property){
   }
 
   UnitId GetId() const { return _id; }
   PlayerId GetPlayerId() const;
   const PointF &GetPointF() const { return _p; }
+
+
   const PointF &GetLastPointF() const { return _last_p; }
   void SetPointF(const PointF &p) { _last_p = _p; _p = p; }
 

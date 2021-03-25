@@ -87,7 +87,7 @@ class Loader(CommonLoader):
             name="reduced_project"
         )
 
-nIter = 5000
+nIter = 3000
 elapsed_wait_only = 0
 
 import pickle

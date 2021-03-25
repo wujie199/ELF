@@ -8,7 +8,6 @@
 
 #ifndef _MC_RULE_ACTOR_H_
 #define _MC_RULE_ACTOR_H_
-
 #include "engine/rule_actor.h"
 
 class MCRuleActor : public RuleActor {
@@ -21,7 +20,11 @@ public:
     // Act by a state array for each region, used by MiniRTS
     //bool ActByRegionalState(const GameEnv &env, const Reply &reply, string *state_string, AssignedCmds *assigned_cmds);
 
-    // Determine state array for SimpleAI
+
+    // AI制定攻击策略
+    bool ActByState3(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds);
+
+    // 内置AI 执行的策略
     bool GetActSimpleState(vector<int>* state);
     // Determine state array for HitAndRunAI
 

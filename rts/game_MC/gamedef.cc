@@ -21,7 +21,7 @@ int GameDef::GetNumUnitType() {
 }
 
 int GameDef::GetNumAction() {
-    return NUM_AISTATE;
+    return NUM_AISTATE;     // 16
 }
 
 bool GameDef::IsUnitTypeBuilding(UnitType t) const{
@@ -53,14 +53,16 @@ void GameDef::GlobalInit() {
     });
 }
 
+
 void GameDef::Init() {
     _units.assign(GetNumUnitType(), UnitTemplate());
     _units[RESOURCE] = _C(0, 1000, 1000, 0, 0, 0, 0, vector<int>{0, 0, 0, 0}, vector<CmdType>{}, ATTR_INVULNERABLE);
-    _units[WORKER] = _C(50, 50, 0, 0.1, 2, 1, 3, vector<int>{0, 10, 40, 40}, vector<CmdType>{MOVE, ATTACK, BUILD, GATHER});
-    _units[MELEE_ATTACKER] = _C(100, 100, 1, 0.1, 15, 1, 3, vector<int>{0, 15, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[RANGE_ATTACKER] = _C(100, 50, 0, 0.2, 10, 5, 5, vector<int>{0, 10, 0, 0}, vector<CmdType>{MOVE, ATTACK});
-    _units[BARRACKS] = _C(200, 200, 1, 0.0, 0, 0, 5, vector<int>{0, 0, 0, 50}, vector<CmdType>{BUILD});
-    _units[BASE] = _C(500, 500, 2, 0.0, 0, 0, 5, {0, 0, 0, 50}, vector<CmdType>{BUILD});
+    _units[WORKER] = _C(5, 50, 0, 0.02, 2, 1, 3, vector<int>{0, 0, 0, 0}, vector<CmdType>{ATTACK,MOVE,GATHER,BUILD});
+    _units[MELEE_ATTACKER] = _C(100, 100, 0, 0.01, 100, 1, 3, vector<int>{0, 500,0, 0}, vector<CmdType>{MOVE,ATTACK});
+    _units[RANGE_ATTACKER] = _C(100, 100, 100, 0, 100, 2, 4, vector<int>{0, 100, 0, 0}, vector<CmdType>{ATTACK});
+    // 炮弹伤害
+    _units[BARRACKS] = _C(0, 99, 1, 0, 100, 3, 5, vector<int>{0, 0, 0, 0}, vector<CmdType>{BUILD,MOVE});
+    _units[BASE] = _C(500, 250, 0, 0, 100, 3, 5, {0, 0, 0, 2}, vector<CmdType>{BUILD,ATTACK});
 }
 
 vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
@@ -71,9 +73,11 @@ vector<pair<CmdBPtr, int> > GameDef::GetInitCmds(const RTSGameOptions&) const{
 }
 
 PlayerId GameDef::CheckWinner(const GameEnv& env, bool /*exceeds_max_tick*/) const {
-    return env.CheckBase(BASE);
+    return env.CheckWinner(BASE,env);
+    // return env.CheckBase(BASE);
 }
 
+// 移除死亡单位
 void GameDef::CmdOnDeadUnitImpl(GameEnv* env, CmdReceiver* receiver, UnitId /*_id*/, UnitId _target) const{
     Unit *target = env->GetUnit(_target);
     if (target == nullptr) return;

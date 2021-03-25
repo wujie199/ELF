@@ -5,9 +5,9 @@
 * This source code is licensed under the BSD-style license found in the
 * LICENSE file in the root directory of this source tree.
 */
-
+#include<unistd.h>
 #include "mc_rule_actor.h"
-
+#include "game_action.h"
 bool MCRuleActor::ActByState2(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds) {
     assigned_cmds->clear();
     *state_string = "";
@@ -30,138 +30,91 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
     assigned_cmds->clear();
     *state_string = "NOOP";
 
-    // Build workers.
+    // 建造飞机
     if (state[STATE_BUILD_WORKER]) {
-        *state_string = "Build worker..NOOP";
-        const Unit *base = _preload.Base();
-        if (IsIdle(*_receiver, *base)) {
-            if (_preload.BuildIfAffordable(WORKER)) {
-                *state_string = "Build worker..Success";
-                store_cmd(base, _B(WORKER), assigned_cmds);
-            }
-        }
+       *state_string = "Build worker..NOOP";
+       const Unit *base = _preload.Base();
+       if (IsIdle(*_receiver, *base)) {
+           if (_preload.BuildIfAffordable(WORKER)) {
+               *state_string = "Build worker..Success";
+               store_cmd(base, _B(WORKER), assigned_cmds);
+           }
+       }
     }
 
     const auto& my_troops = _preload.MyTroops();
+    const auto& enemy_troops = _preload.EnemyTroops();
+    const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
+    // const auto& all_my_troops = _preload.AllMyTroops();
+    // const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    // Ask workers to gather.
-    for (const Unit *u : my_troops[WORKER]) {
-        if (IsIdle(*_receiver, *u)) {
-            // Gather!
-            store_cmd(u, _preload.GetGatherCmd(), assigned_cmds);
-        }
-    }
+    // std::cout <<  "-----------enemy-------: " << enemy_troops_in_range.empty() <<  "-----------enemy[0]-------: " << enemy_troops_in_range[0] <<   "-----------enemy[0].id-------: "<< enemy_troops_in_range[0]->GetId() << std::endl;    // 1 是空   0 非空
 
-    // If resource permit, build barracks.
+    // 飞机前进，投弹
     if (state[STATE_BUILD_BARRACK]) {
-        *state_string = "Build barracks..NOOP";
-        if (_preload.Affordable(BARRACKS)) {
-            // cout << "Building barracks!" << endl;
-            const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
-            if (u != nullptr) {
-                CmdBPtr cmd = _preload.GetBuildBarracksCmd(env);
-                if (cmd != nullptr) {
-                    *state_string = "Build barracks..Success";
-                    store_cmd(u, std::move(cmd), assigned_cmds);
-                    _preload.Build(BARRACKS);
-                }
+        // 前进
+       if (_preload.Affordable(BARRACKS)) {
+           const Unit *u = GameEnv::PickFirstIdle(my_troops[WORKER], *_receiver);
+           if (u != nullptr) {
+               CmdBPtr cmd = _preload.GetMOVECmd();
+               if (cmd != nullptr) {
+                   *state_string = "Forword..Success";
+                   store_cmd(u, std::move(cmd), assigned_cmds);
+               }
+           }
+        }
+        // 建造兵营
+        for(const Unit *u:my_troops[WORKER]){
+                if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 50.0f){
+                    // const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
+                        CmdBPtr cmd1 = _preload.GetBuildBarracksCmd1(env,u->GetPointF());
+                            if (cmd1 != nullptr) {
+                                // cout << "Building barracks!" << endl;
+                                store_cmd(u, std::move(cmd1), assigned_cmds);
+                    }
             }
         }
     }
 
-    // If we have barracks with resource, build troops.
-    if (state[STATE_BUILD_MELEE_TROOP]) {
-        *state_string = "Build Melee Troop..NOOP";
+    // 建造炮弹
+    if(state[STATE_BUILD_MELEE_TROOP]){
         if (_preload.Affordable(MELEE_ATTACKER)) {
             const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
             if (u != nullptr) {
-                *state_string = "Build Melee Troop..Success";
+                *state_string = "Build Bullet..Success";
                 store_cmd(u, _B(MELEE_ATTACKER), assigned_cmds);
                 _preload.Build(MELEE_ATTACKER);
             }
         }
     }
 
-    if (state[STATE_BUILD_RANGE_TROOP]) {
-        *state_string = "Build Range Troop..NOOP";
-        if (_preload.Affordable(RANGE_ATTACKER)) {
-            const Unit *u = GameEnv::PickFirstIdle(my_troops[BARRACKS], *_receiver);
-            if (u != nullptr) {
-                *state_string = "Build Range Troop..Success";
-                store_cmd(u, _B(RANGE_ATTACKER), assigned_cmds);
-                _preload.Build(RANGE_ATTACKER);
-            }
+        // 飞机返回
+    if(state[STATE_START]){
+        for(const Unit *u : my_troops[WORKER]){
+           if (u != nullptr) {
+               CmdBPtr cmd = _preload.GetReturn();
+               if (cmd != nullptr) {
+                   *state_string = "Return..Success";
+                   store_cmd(u, std::move(cmd), assigned_cmds);
+               }
+           }
         }
     }
 
-    if (state[STATE_ATTACK]) {
-        *state_string = "Attack..Normal";
-        // Then let's go and fight.
+    // 炮弹移向目标
+    if(state[STATE_DEFEND]){
         auto cmd = _preload.GetAttackEnemyBaseCmd();
         batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
     }
-
-    const auto& enemy_troops = _preload.EnemyTroops();
-    const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
-    const auto& all_my_troops = _preload.AllMyTroops();
-    const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
-
-    if (state[STATE_HIT_AND_RUN]) {
-        *state_string = "Hit and run";
-        // cout << "Enter hit and run procedure" << endl << flush;
-        if (enemy_troops[MELEE_ATTACKER].empty() && enemy_troops[RANGE_ATTACKER].empty() && ! enemy_troops[WORKER].empty()) {
-            // cout << "Enemy only have worker" << endl << flush;
-            for (const Unit *u : my_troops[RANGE_ATTACKER]) {
-                hit_and_run(env, u, enemy_troops[WORKER], assigned_cmds);
-            }
-        }
-        if (! enemy_troops[MELEE_ATTACKER].empty()) {
-            // cout << "Enemy only have malee attacker" << endl << flush;
-            for (const Unit *u : my_troops[RANGE_ATTACKER]) {
-                hit_and_run(env, u, enemy_troops[MELEE_ATTACKER], assigned_cmds);
-            }
-        }
-        if (! enemy_troops[RANGE_ATTACKER].empty()) {
-            auto cmd = _A(enemy_troops[RANGE_ATTACKER][0]->GetId());
-            batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-            batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
+    
+    // 消灭基地附近的炮弹
+    if(state[STATE_HIT_AND_RUN]){
+        if(my_troops[MELEE_ATTACKER].size() > 0){
+            // std::cout << "------------" << std::endl;
+            batch_store_cmds(enemy_troops[RANGE_ATTACKER], _A(my_troops[MELEE_ATTACKER][0]->GetId()), false, assigned_cmds);
         }
     }
 
-    if (state[STATE_ATTACK_IN_RANGE]) {
-      *state_string = "Attack enemy in range..NOOP";
-      if (! enemy_troops_in_range.empty()) {
-        *state_string = "Attack enemy in range..Success";
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
-        batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
-        batch_store_cmds(my_troops[RANGE_ATTACKER], cmd, false, assigned_cmds);
-      }
-    }
-
-    if (state[STATE_DEFEND]) {
-      // Group Retaliation. All troops attack.
-      *state_string = "Defend enemy attack..NOOP";
-
-      const Unit *enemy_at_resource = _preload.EnemyAtResource();
-      if (enemy_at_resource != nullptr) {
-          *state_string = "Defend enemy attack..Success";
-          batch_store_cmds(all_my_troops, _A(enemy_at_resource->GetId()), true, assigned_cmds);
-      }
-
-      const Unit *enemy_at_base = _preload.EnemyAtBase();
-      if (enemy_at_base != nullptr) {
-          *state_string = "Defend enemy attack..Success";
-          batch_store_cmds(all_my_troops, _A(enemy_at_base->GetId()), true, assigned_cmds);
-      }
-
-      if (! enemy_attacking_economy.empty()) {
-        *state_string = "Defend enemy attack..Success";
-        auto it = enemy_attacking_economy.begin();
-        auto cmd = _A((*it)->GetId());
-        batch_store_cmds(all_my_troops, cmd, true, assigned_cmds);
-      }
-    }
     return true;
 }
 
@@ -169,32 +122,150 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
     vector<int> &_state = *state;
 
     const auto& my_troops = _preload.MyTroops();
-    const auto& cnt_under_construction = _preload.CntUnderConstruction();
-    const auto& enemy_troops = _preload.EnemyTroops();
-    const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
-    const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
 
-    if (my_troops[WORKER].size() < 3 && _preload.Affordable(WORKER)) {
+
+    if(my_troops[WORKER].size() < 4){
         _state[STATE_BUILD_WORKER] = 1;
     }
 
-    if (my_troops[WORKER].size() >= 3 && my_troops[BARRACKS].size() + cnt_under_construction[BARRACKS] < 1 && _preload.Affordable(BARRACKS)) {
+    // 兵营以1为界限
+    if(my_troops[BARRACKS].size() < 1){
+        // 飞机前进，并且建造兵营
         _state[STATE_BUILD_BARRACK] = 1;
+
+    }else{
+        // 飞机返回
+        _state[STATE_START] = 1;
     }
 
-    if (my_troops[BARRACKS].size() >= 1 && _preload.Affordable(MELEE_ATTACKER)) {
+    if(my_troops[BARRACKS].size() > 0 && my_troops[MELEE_ATTACKER].size() < 4){
+        // 建造炮弹
         _state[STATE_BUILD_MELEE_TROOP] = 1;
+        // 炮弹移向目标
+        _state[STATE_DEFEND] = 1;
+    }else{
+        // 炮弹向目标移动
+        _state[STATE_DEFEND] = 1;
+    }
+        // _state[STATE_HIT_AND_RUN] = 1;
+    return true;
+}
+
+
+bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, string *state_string, AssignedCmds *assigned_cmds) {
+
+    // 获取我方所有军队
+    const auto& my_troops = _preload.MyTroops();
+    // const auto& enemy_troops = _preload.EnemyTroops();
+    const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
+    // const auto& all_my_troops = _preload.AllMyTroops();
+    // const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
+
+    if (state[STATE_BUILD_WORKER]) {
+    int i = 0;
+    if(!enemy_troops_in_range.empty()){                         // 1 是空   0 非空
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
     }
 
-    if (my_troops[MELEE_ATTACKER].size() >= 5 && ! enemy_troops[BASE].empty()) {
-        _state[STATE_ATTACK] = 1;
+    if (state[STATE_BUILD_BARRACK]) {
+    int i = 1;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
     }
-    if (! enemy_troops_in_range.empty() || ! enemy_attacking_economy.empty()) {
-        _state[STATE_ATTACK_IN_RANGE] = 1;
-        _state[STATE_DEFEND] = 1;
+    
+    if (state[STATE_BUILD_MELEE_TROOP]) {
+    int i = 2;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    
+    if (state[STATE_BUILD_RANGE_TROOP]) {
+    int i = 3;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_ATTACK]) {
+    int i = 4;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_ATTACK_IN_RANGE]) {
+    int i = 5;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_HIT_AND_RUN]) {
+    int i = 6;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_DEFEND]) {
+    int i = 7;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[NUM_AISTATE]) {
+    int i = 8;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_10]) {
+    int i = 9;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    if (state[STATE_11]) {
+    int i = 10;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+    //     if (state[STATE_12]) {
+    // int i = 11;
+    // if(!enemy_troops_in_range.empty()){
+    //     auto cmd = _A(enemy_troops_in_range[0]->GetId());
+    //     batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+    //     }
+    // }
+    //     if (state[STATE_13]) {
+    // int i = 12;
+    // if(!enemy_troops_in_range.empty()){
+    //     auto cmd = _A(enemy_troops_in_range[0]->GetId());
+    //     batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+    //     }
+    // }
+    if (state[NUM_AISTATE]) {
+    int i = 13;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
     }
     return true;
 }
+
+
 
 bool MCRuleActor::GetActHitAndRunState(vector<int>* state) {
     vector<int> &_state = *state;

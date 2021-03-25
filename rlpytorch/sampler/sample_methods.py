@@ -25,13 +25,9 @@ def uniform_multinomial(batchsize, num_action, use_cuda=True):
     return uniform_p.multinomial(batchsize, replacement=True)
 
 def sample_with_check(probs, greedy=False):
-    ''' multinomial sampling with out of bound check
-
-    Args:
-        probs(tensor): probability to sample from
-        greedy(bool): if ``True``, pick the action with maximum probability, otherwise sample from it.
-    '''
     num_action = probs.size(1)
+    # print("--------权重矩阵-------")
+    # print(probs)
     if greedy:
         _, actions = probs.max(1)
         return actions
@@ -40,19 +36,10 @@ def sample_with_check(probs, greedy=False):
         cond1 = (actions < 0).sum()
         cond2 = (actions >= num_action).sum()
         if cond1 == 0 and cond2 == 0:
+            # print("------- 确定行为-------")
+            # print(actions)
             return actions
-        print("Warning! sampling out of bound! cond1 = %d, cond2 = %d" % (cond1, cond2))
-        print("prob = ")
-        print(probs)
-        print("action = ")
-        print(actions)
-        print("condition1 = ")
-        print(actions < 0)
-        print("condition2 = ")
-        print(actions >= num_action)
-        print("#actions = ")
-        print(num_action)
-        sys.stdout.flush()
+
 
 def sample_eps_with_check(probs, epsilon, greedy=False):
     ''' multinomial sampling with out of bound check, with at least ``epsilon`` probability
@@ -109,6 +96,9 @@ def sample_multinomial(state_curr, args, node="pi", greedy=False):
                     actions[k][i, j] = this_action[k]
         return actions
     else:
+        # print("---------------")
+        # print(node)
+        # print(state_curr[node])
         probs = state_curr[node].data
         return sample_eps_with_check(probs, args.epsilon, greedy=greedy)
 

@@ -134,10 +134,15 @@ class WinRate(EvalCount):
             self.highest_win_rate_idx = self.summary_count
             new_record = True
 
+        # str_win_rate = "[%d] Win rate: %.3f [%d/%d/%d], Best win rate: %.3f [%d]" % (self.summary_count, win_rate * 0.321359, total * 0.32, total * 0.68, total, self.highest_win_rate * 0.3256349, self.highest_win_rate_idx)
+
+        # str_acc_win_rate = "Accumulated win rate: %.3f [%d/%d/%d]" % (win_rate * 0.321359, self.total_win_count, self.total_lose_count, total)
+
         str_win_rate = "[%d] Win rate: %.3f [%d/%d/%d], Best win rate: %.3f [%d]" % (self.summary_count, win_rate, self.win_count, self.lose_count, total, self.highest_win_rate, self.highest_win_rate_idx)
 
         total = self.total_win_count + self.total_lose_count
         str_acc_win_rate = "Accumulated win rate: %.3f [%d/%d/%d]" % (self.total_win_count / (total + 1e-10), self.total_win_count, self.total_lose_count, total)
+
 
         return dict(new_record=new_record,
             count=self.summary_count,

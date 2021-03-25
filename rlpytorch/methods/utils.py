@@ -42,6 +42,8 @@ def accumulate(acc, new):
 
 def add_err(overall_err, new_err):
     ''' Add ``new_err`` to ``overall_err``
+    
+    记录误差，将每个时刻新的误差记录下来
 
     Args:
         overall_err(float): summed overall error

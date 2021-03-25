@@ -31,7 +31,6 @@ class Model_ActorCritic(Model):
             linear_in_dim = last_num_channel
         else:
             linear_in_dim = last_num_channel * 25
-
         self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
         self.linear_value = nn.Linear(linear_in_dim, 1)
 
@@ -54,8 +53,8 @@ class Model_ActorCritic(Model):
             xreduced[:, self.num_unit:] /= 20 * 20
             output = self._var(xreduced)
         else:
-            output = self.net(self._var(x["s"]))
-
+            output = self.net(self._var(x["s"])) 
+            
         return self.decision(output)
 
     def decision(self, h):

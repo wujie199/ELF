@@ -40,7 +40,7 @@ class Sampler:
         Args:
             state_curr(dict): current state containing all data
         '''
-        #TODO: This only handles epsilon_greedy and multinomial for now. Add uniform and original_distribution?
+    
         sampler = epsilon_greedy if self.args.greedy else sample_multinomial
 
         actions = dict()
