@@ -51,52 +51,39 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     const PlayerId player_id = 0;
     const PlayerId enemy_id = 1;
 
-    _CREATE(BASE, PointF(10, 19), player_id);
-    _CREATE(RESOURCE,PointF(1,19),player_id);
-    _CREATE(RANGE_ATTACKER, PointF(5,19), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(5.111,17.9518316), player_id);
-    // _CREATE(RANGE_ATTACKER, PointF(5.333,17.2050317245), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(5.7898,16.30386139), player_id);
-    // _CREATE(RANGE_ATTACKER, PointF(6.555,15.37619), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(6.8888,15.08567329), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(8.2569,14.313679), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(8.9446,14112656054), player_id);
+    _CREATE(BASE, PointF(17, 34), player_id);
+    _CREATE(RESOURCE,PointF(16,34),player_id);
+    _CREATE(RESOURCE,PointF(18,34),player_id);
+    _CREATE(RANGE_ATTACKER, PointF(11,34), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(12,30.68337520), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(13,29.527864045000), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(14,28.80384757729), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(15,28.3431457505), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(16,28.0839202169), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(17,28), player_id);
+    // _CREATE(RANGE_ATTACKER, PointF(24,39), player_id);
 
-    _CREATE(RANGE_ATTACKER, PointF(10.328,14.010769999), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(12.2314,14.5255330), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(13.3556,15.2932563293), player_id);
-    // _CREATE(RANGE_ATTACKER, PointF(13.326,15.26666), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(14.219533,16.31754939), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(14.5029,16.82654), player_id);
-    // _CREATE(RANGE_ATTACKER, PointF(14.80719,17.62489116), player_id);
-    _CREATE(RANGE_ATTACKER, PointF(14.99,18.68393038741442), player_id);
-
-    // _CREATE(RANGE_ATTACKER, PointF(9.5,19), player_id);
-    // _CREATE(RANGE_ATTACKER, PointF(10.5,19), player_id);
-    //  _CREATE(WORKER, PointF(1,19), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(18,28.0839202169), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(19,28.3431457505), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(20,28.8038475), player_id);
+    //_CREATE(RANGE_ATTACKER, PointF(29.5,40.648353455754965), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(21,29.527864045), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(22,30.68337520), player_id);
+    // _CREATE(RANGE_ATTACKER, PointF(33,44.6411010564593), player_id);
+    _CREATE(RANGE_ATTACKER, PointF(23,34), player_id);
 
     _CHANGE_RES(player_id, 1);
 
-    // _CREATE(WORKER,PointF(1,5),enemy_id);
-    // _CREATE(WORKER,PointF(3,4),enemy_id);
-    // _CREATE(WORKER,PointF(2,3),enemy_id);
-    // _CREATE(WORKER,PointF(4,2),enemy_id);
-    // _CREATE(BARRACKS,PointF(2,5),enemy_id);
-    // _CREATE(WORKER,PointF(11,3),enemy_id);
-
+    // 基地随机数
     unsigned seed;
     seed = time(0);
     srand(seed);
-    int x = rand() % 19 + 1;
-    int y = rand() % 8 + 1;
+    int x = rand() % 34 + 1;
+    int y = rand() % 2 + 1;
 
-    
-    _CHANGE_RES(enemy_id, 420);
-    _CREATE(RESOURCE,PointF(1,1),enemy_id);
+    _CHANGE_RES(enemy_id, 440);
+    _CREATE(RESOURCE,PointF(0,0),enemy_id);
     _CREATE(BASE, PointF(x, y), enemy_id);
-    // _CREATE(BASE, PointF(0, 5), enemy_id);
-    // _CREATE(BASE, PointF(19, 5), enemy_id);
-    // _CREATE(WORKER, PointF(2, 1), enemy_id);
     return true;
 }
 

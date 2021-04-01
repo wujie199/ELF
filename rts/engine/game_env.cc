@@ -168,7 +168,7 @@ PlayerId GameEnv::CheckWinner(UnitType base_type,const GameEnv& env) const {
            if(!hasEnemyUnit){  
                 const Player& enemy = env.GetPlayer(enemy_id);
                 int resource = enemy.GetResource();
-               if( (resource > 2) || (u->GetUnitType() == MELEE_ATTACKER)){
+               if( (resource > 20) || (u->GetUnitType() == MELEE_ATTACKER)){
                     hasEnemyUnit = true;
                }
            } 

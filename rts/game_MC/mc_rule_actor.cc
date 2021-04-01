@@ -58,14 +58,14 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
            if (u != nullptr) {
                CmdBPtr cmd = _preload.GetMOVECmd();
                if (cmd != nullptr) {
-                   *state_string = "Forword..Success";
+                   *state_string = "Forward..Success";
                    store_cmd(u, std::move(cmd), assigned_cmds);
                }
            }
         }
         // 建造兵营
         for(const Unit *u:my_troops[WORKER]){
-                if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 50.0f){
+                if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 60.0f){
                     // const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
                         CmdBPtr cmd1 = _preload.GetBuildBarracksCmd1(env,u->GetPointF());
                             if (cmd1 != nullptr) {
@@ -103,18 +103,11 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
 
     // 炮弹移向目标
     if(state[STATE_DEFEND]){
+        *state_string = "Bullet..forward";
         auto cmd = _preload.GetAttackEnemyBaseCmd();
         batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
     }
     
-    // 消灭基地附近的炮弹
-    if(state[STATE_HIT_AND_RUN]){
-        if(my_troops[MELEE_ATTACKER].size() > 0){
-            // std::cout << "------------" << std::endl;
-            batch_store_cmds(enemy_troops[RANGE_ATTACKER], _A(my_troops[MELEE_ATTACKER][0]->GetId()), false, assigned_cmds);
-        }
-    }
-
     return true;
 }
 
@@ -123,8 +116,7 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
 
     const auto& my_troops = _preload.MyTroops();
 
-
-    if(my_troops[WORKER].size() < 4){
+    if(my_troops[WORKER].size() < 4 && my_troops[BARRACKS].size() == 0){
         _state[STATE_BUILD_WORKER] = 1;
     }
 
@@ -132,7 +124,6 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
     if(my_troops[BARRACKS].size() < 1){
         // 飞机前进，并且建造兵营
         _state[STATE_BUILD_BARRACK] = 1;
-
     }else{
         // 飞机返回
         _state[STATE_START] = 1;
@@ -147,7 +138,6 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
         // 炮弹向目标移动
         _state[STATE_DEFEND] = 1;
     }
-        // _state[STATE_HIT_AND_RUN] = 1;
     return true;
 }
 
@@ -241,20 +231,20 @@ bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, stri
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
-    //     if (state[STATE_12]) {
-    // int i = 11;
-    // if(!enemy_troops_in_range.empty()){
-    //     auto cmd = _A(enemy_troops_in_range[0]->GetId());
-    //     batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
-    //     }
-    // }
-    //     if (state[STATE_13]) {
-    // int i = 12;
-    // if(!enemy_troops_in_range.empty()){
-    //     auto cmd = _A(enemy_troops_in_range[0]->GetId());
-    //     batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
-    //     }
-    // }
+        if (state[STATE_12]) {
+    int i = 11;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
+        if (state[STATE_13]) {
+    int i = 12;
+    if(!enemy_troops_in_range.empty()){
+        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
+        }
+    }
     if (state[NUM_AISTATE]) {
     int i = 13;
     if(!enemy_troops_in_range.empty()){
