@@ -146,7 +146,7 @@ canvas.addEventListener("mousedown", function (e) {
     if (e.button === 0) {
         var xy0 = convert_xy_back(e.pageX, e.pageY);
         // console.log(xy0);
-        if (xy0[0] >35 || xy0[1] > 35) return;
+        if (xy0[0] >36 || xy0[1] > 36) return;
         x_down = e.pageX;
         y_down = e.pageY;
     }
@@ -155,7 +155,7 @@ canvas.addEventListener("mousedown", function (e) {
 // 鼠标松开
 canvas.addEventListener("mouseup", function (e) {
     var xy0 = convert_xy_back(e.pageX, e.pageY);
-    if (xy0[0] > 35 || xy0[1] > 35) return; 
+    if (xy0[0] > 36 || xy0[1] > 36) return; 
     if (e.button === 0) {
         var xy = convert_xy_back(x_down, y_down);
         if (dragging && x_down && y_down) {

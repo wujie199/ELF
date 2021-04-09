@@ -205,6 +205,27 @@ bool GameEnv::FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p
     return false;
 }
 
+bool GameEnv::FindEmptyPlaceNearby2(const PointF &p, float l1_radius, PointF *res_p) const {
+    // Find an empty place by simple local grid search.
+    const float margin = 2.00f;
+    const float cx = _map->GetXSize() / 2;
+    const float cy = _map->GetYSize() / 2;
+    float sx = p.x < cx ? -1 : 1;
+    float sy = p.y < cy ? -1 : 1;
+
+    for (float dx = -sx * l1_radius; dx != sx * l1_radius + sx; dx += sx) {
+        for (float dy = -sy * l1_radius; dy != sy * l1_radius + sy; dy += sy) {
+            PointF new_p(p.x + dx, p.y + dy);
+            if (_map->CanPass(new_p, INVALID) && _map->IsIn(new_p, margin)) {
+                // It may not be a good strategy, though.
+                *res_p = new_p;
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool GameEnv::FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const {
     // Find an empty place by simple local grid search.
     for (int dx = -l1_radius; dx <= l1_radius; dx ++) {

@@ -125,8 +125,9 @@ public:
     }
         CmdBPtr GetBuildBarracksCmd1(const GameEnv &env,const PointF now) const {
         PointF p;
-        if (env.FindEmptyPlaceNearby(now, 1, &p) && ! p.IsInvalid()) return _B(BARRACKS, p);
-        else return CmdBPtr();
+        if (env.FindEmptyPlaceNearby(now, 1, &p) && ! p.IsInvalid()){
+            return _B(BARRACKS, p);
+        }else return CmdBPtr();
     }
     CmdBPtr GetMOVECmd() const {return _M(_enemy_base_loc);}
     CmdBPtr GetReturn() const { return _M(_base_loc);}

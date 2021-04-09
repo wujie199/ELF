@@ -39,6 +39,7 @@ class MiniRTSNet(Model):
             else:
                 self.num_channels.append(int(v))
 
+        # self.convs = [ nn.Conv2d(self.num_channels[i], self.num_channels[i+1], 3, padding = 0) for i in range(len(self.num_channels)-1) ]
         self.convs = [ nn.Conv2d(self.num_channels[i], self.num_channels[i+1], 3, padding = 1) for i in range(len(self.num_channels)-1) ]
         for i, conv in enumerate(self.convs):
             setattr(self, "conv%d" % (i + 1), conv)
@@ -64,20 +65,24 @@ class MiniRTSNet(Model):
     def forward(self, input):
         # 地图太大， 数据量大，
         # forward 中添加了两层卷积和池化
-        x = input.view(input.size(0), self.input_channel, self.mapy, self.mapx)
+        x = input.view(input.size(0), self.input_channel, self.mapy, self.mapx) # 16 、22、20、20
 
         counts = Counter()
         for i in range(len(self.arch)):
             if self.arch[i] == "c":
                 c = counts["c"]
-                x = self.convs[c](x)
+                # print(x)            # 16 22 20 20 、16 64 10 10
+                x = self.convs[c](x)        # 16 64 20 20 、16 64 10 10
                 if not self._no_bn(): x = self.convs_bn[c](x)
-                x = self.relu(x)
+                x = self.relu(x)                # 16 64 20 20、16 64 10 10
                 counts["c"] += 1
             elif self.arch[i] == "p":
-                x = self.pool(x)
+                # print(x)                # 16 64 20 20
+                x = self.pool(x)    # 16 64 10 10、16 64 5 5
 
         if self.output1d:
-            x = x.view(x.size(0), -1)
+            # print(x.size(0))    # 16
+            # print(x)    # 16 22 5 5
+            x = x.view(x.size(0), -1) #  16 550
 
         return x

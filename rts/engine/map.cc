@@ -149,8 +149,8 @@ void RTSMap::reset_intermediates() {
 }
 
 void RTSMap::load_default_map() {
-    _m = 35;
-    _n = 35;
+    _m = 36;
+    _n = 36;
     _level = 1;
     _map.assign(_m * _n * _level, MapSlot());
 }

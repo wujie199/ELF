@@ -117,6 +117,7 @@ public:
 
     // Find empty place near a place, used by creating units.
     bool FindEmptyPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;
+    bool FindEmptyPlaceNearby2(const PointF &p, float l1_radius, PointF *res_p) const;
 
     // Find empty place near a place, used by creating buildings.
     bool FindBuildPlaceNearby(const PointF &p, int l1_radius, PointF *res_p) const;

@@ -30,7 +30,8 @@ class Model_ActorCritic(Model):
             self.num_unit = params["num_unit_type"]
             linear_in_dim = last_num_channel
         else:
-            linear_in_dim = last_num_channel * 25
+            linear_in_dim = last_num_channel * 81       # 25
+
         self.linear_policy = nn.Linear(linear_in_dim, params["num_action"])
         self.linear_value = nn.Linear(linear_in_dim, 1)
 
@@ -53,9 +54,10 @@ class Model_ActorCritic(Model):
             xreduced[:, self.num_unit:] /= 20 * 20
             output = self._var(xreduced)
         else:
-            output = self.net(self._var(x["s"])) 
-            
-        return self.decision(output)
+            output = self.net(self._var(x["s"]))    # 卷积结果 16 x 550
+
+
+        return self.decision(output)    # h   16 x 550  、 v 16 x 1 、 pi 16 x 13
 
     def decision(self, h):
         h = self._var(h)

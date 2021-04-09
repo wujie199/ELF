@@ -42,13 +42,15 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
        }
     }
 
+
     const auto& my_troops = _preload.MyTroops();
     const auto& enemy_troops = _preload.EnemyTroops();
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
     // const auto& all_my_troops = _preload.AllMyTroops();
     // const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
-
+    // std::cout <<  "-----------enemy-------: " << enemy_troops_in_range.empty() <<std::endl;
     // std::cout <<  "-----------enemy-------: " << enemy_troops_in_range.empty() <<  "-----------enemy[0]-------: " << enemy_troops_in_range[0] <<   "-----------enemy[0].id-------: "<< enemy_troops_in_range[0]->GetId() << std::endl;    // 1 是空   0 非空
+
 
     // 飞机前进，投弹
     if (state[STATE_BUILD_BARRACK]) {
@@ -65,11 +67,10 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         }
         // 建造兵营
         for(const Unit *u:my_troops[WORKER]){
-                if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 60.0f){
-                    // const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
+            // const Unit *u = GameEnv::PickFirst(my_troops[WORKER], *_receiver, GATHER);
+                if(PointF::L2Sqr(u->GetPointF(),_preload.GetEnemyBaseLoc()) < 120.0f){
                         CmdBPtr cmd1 = _preload.GetBuildBarracksCmd1(env,u->GetPointF());
                             if (cmd1 != nullptr) {
-                                // cout << "Building barracks!" << endl;
                                 store_cmd(u, std::move(cmd1), assigned_cmds);
                     }
             }
@@ -107,6 +108,13 @@ bool MCRuleActor::ActByState(const GameEnv &env, const vector<int>& state, strin
         auto cmd = _preload.GetAttackEnemyBaseCmd();
         batch_store_cmds(my_troops[MELEE_ATTACKER], cmd, false, assigned_cmds);
     }
+
+    // 消灭基地附近的炮弹
+    if(state[STATE_HIT_AND_RUN]){
+        if(my_troops[MELEE_ATTACKER].size() > 0){
+            batch_store_cmds(enemy_troops[RANGE_ATTACKER], _A(my_troops[MELEE_ATTACKER][0]->GetId()), false, assigned_cmds);
+        }
+    }
     
     return true;
 }
@@ -116,7 +124,7 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
 
     const auto& my_troops = _preload.MyTroops();
 
-    if(my_troops[WORKER].size() < 4 && my_troops[BARRACKS].size() == 0){
+    if(my_troops[WORKER].size() < 4){
         _state[STATE_BUILD_WORKER] = 1;
     }
 
@@ -129,7 +137,7 @@ bool MCRuleActor::GetActSimpleState(vector<int>* state) {
         _state[STATE_START] = 1;
     }
 
-    if(my_troops[BARRACKS].size() > 0 && my_troops[MELEE_ATTACKER].size() < 4){
+    if(my_troops[BARRACKS].size() > 0 && my_troops[MELEE_ATTACKER].size() < 6){
         // 建造炮弹
         _state[STATE_BUILD_MELEE_TROOP] = 1;
         // 炮弹移向目标
@@ -146,15 +154,14 @@ bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, stri
 
     // 获取我方所有军队
     const auto& my_troops = _preload.MyTroops();
-    // const auto& enemy_troops = _preload.EnemyTroops();
     const auto& enemy_troops_in_range = _preload.EnemyTroopsInRange();
-    // const auto& all_my_troops = _preload.AllMyTroops();
-    // const auto& enemy_attacking_economy = _preload.EnemyAttackingEconomy();
+
 
     if (state[STATE_BUILD_WORKER]) {
     int i = 0;
     if(!enemy_troops_in_range.empty()){                         // 1 是空   0 非空
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
@@ -162,7 +169,8 @@ bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, stri
     if (state[STATE_BUILD_BARRACK]) {
     int i = 1;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
@@ -170,7 +178,8 @@ bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, stri
     if (state[STATE_BUILD_MELEE_TROOP]) {
     int i = 2;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
@@ -178,77 +187,88 @@ bool MCRuleActor::ActByState3(const GameEnv &env, const vector<int>& state, stri
     if (state[STATE_BUILD_RANGE_TROOP]) {
     int i = 3;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_ATTACK]) {
     int i = 4;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_ATTACK_IN_RANGE]) {
     int i = 5;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_HIT_AND_RUN]) {
     int i = 6;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_DEFEND]) {
     int i = 7;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[NUM_AISTATE]) {
     int i = 8;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_10]) {
     int i = 9;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[STATE_11]) {
     int i = 10;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
         if (state[STATE_12]) {
     int i = 11;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
         if (state[STATE_13]) {
     int i = 12;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }
     if (state[NUM_AISTATE]) {
     int i = 13;
     if(!enemy_troops_in_range.empty()){
-        auto cmd = _A(enemy_troops_in_range[0]->GetId());
+        auto it = enemy_troops_in_range.begin();
+        auto cmd = _A((*it)->GetId());
         batch_store_cmds2(my_troops[RANGE_ATTACKER],cmd,false,assigned_cmds,i);
         }
     }

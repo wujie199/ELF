@@ -81,7 +81,7 @@ bool CmdGenerateUnit::run(GameEnv *env, CmdReceiver *receiver) {
     int x = rand() % 34 + 1;
     int y = rand() % 2 + 1;
 
-    _CHANGE_RES(enemy_id, 440);
+    _CHANGE_RES(enemy_id, 640);
     _CREATE(RESOURCE,PointF(0,0),enemy_id);
     _CREATE(BASE, PointF(x, y), enemy_id);
     return true;
